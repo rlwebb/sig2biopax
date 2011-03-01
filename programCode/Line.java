@@ -9,6 +9,7 @@ import java.util.Scanner;
 import java.io.*;
 
 
+
 public class Line {
 	public static String SourceName ="";
     public static String SourceHumanAccession ="";
@@ -39,6 +40,23 @@ public class Line {
     
     public static Scanner s = null;
     public static BufferedReader in = null;
+
+    public static void FakeLine()
+    {
+                                  SourceName = "man";
+				  SourceLocation = "tree" ;
+				  TargetName = "worm";
+				  TargetLocation = "ground";
+				  Effect = "+";
+				  TypeofInteraction = "eat";
+				  PubMedID = "1234";
+				  SourceHumanAccession = "gorilla";
+				  SourceMouseAccession = "222";
+				  SourceType = "man";
+				  TargetHumanAccession = "333";
+				  TargetMouseAccession = "444";
+				  TargetType = "gorilla";
+    }
 
     
     public static void ReadLine() throws IOException, NullPointerException
@@ -85,6 +103,23 @@ public class Line {
 				  {
 					  SourceName = SourceName.substring(0, (SourceName.length()-PubMedID.length()-1));
 				  }
+			  }
+                          else if(inputTemplate.equalsIgnoreCase("sif"))
+			  {
+				  SourceName = s.next();
+                                  TypeofInteraction = s.next();
+				  SourceLocation = "";
+				  TargetName = s.next();
+				  TargetLocation = "";
+				  Effect = "";
+				  PubMedID = "";
+				  SourceHumanAccession = "";
+				  SourceMouseAccession = "";
+				  SourceType = "";
+				  TargetHumanAccession = "";
+				  TargetMouseAccession = "";
+				  TargetType = "";
+
 			  }
 				  
 			  else

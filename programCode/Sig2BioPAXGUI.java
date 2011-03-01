@@ -23,13 +23,16 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
         initComponents();
         inputFileTextField.setText((System.getProperty("user.dir"))+ "\\input.txt" );
         outputFileTextField.setText((System.getProperty("user.dir"))+ "\\output.owl" );
+        rulesFileTextField.setText((System.getProperty("user.dir"))+ "\\rules.txt" );
         templateTypeComboBox.addItem("sig (default)");
         templateTypeComboBox.addItem("source_target");
         templateTypeComboBox.addItem("tf_target");
+        templateTypeComboBox.addItem("sif");
         
     }
     File inFile = null;
     File outFile = null;
+    File rulesFile = null;
     Boolean overwrite = false;
     String templateType = "sig";
     private Task task;
@@ -76,6 +79,11 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
         templateHelpDialog = new javax.swing.JDialog();
         templateHelpScrollPane = new javax.swing.JScrollPane();
         templateHelpTextPanel = new javax.swing.JTextPane();
+        rulesHelpDialog = new javax.swing.JDialog();
+        jDialog2 = new javax.swing.JDialog();
+        jDialog3 = new javax.swing.JDialog();
+        rulesHelpScrollPane = new javax.swing.JScrollPane();
+        rulesHelpTextPane = new javax.swing.JTextPane();
         inputFileTextField = new javax.swing.JTextField();
         openFileButton = new javax.swing.JButton();
         runProgramButton = new javax.swing.JButton();
@@ -88,6 +96,9 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
         logoSBCNY = new javax.swing.JLabel();
         logoMSSM = new javax.swing.JLabel();
         jProgressBar1 = new javax.swing.JProgressBar();
+        openRulesButton = new javax.swing.JButton();
+        rulesHelpButton = new javax.swing.JButton();
+        rulesFileTextField = new javax.swing.JTextField();
 
         templateHelpDialog.setTitle("Input Template Help");
         templateHelpDialog.setResizable(false);
@@ -95,6 +106,13 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
         templateHelpTextPanel.setContentType("text/html");
         templateHelpTextPanel.setText("<html>Input Template Type -  Defines the format of the flat input file. Select from list or specify your own.<BR>\n<b>sig</b> (default) format syntax: <code>SN SHA SMA ST SL TN THA TMA TT TL E TOI PID</code><br>\n<b>source_target</b> syntax:  <code>SN SL TN TL E TOI PID</code><br>\n<b>tf_target</b> syntax:  <code>SN TN PID</code><br>\nIn <b>tf_target</b> format, transcription is the presupposed TypeOfInteraction<br>\n<BR>\n<b>KEY</b><hr> \t\t\nSN = SourceName: Name of source molecule<br>\nSHA = SourceHumanAccession: Source Swiss-Prot human accession number<br>\nSMA = SourceMouseAccession: Source Swiss-Prot mouse accession number<br>\nST = SourceType: Type of source molecule<br>\nSL = SourceLocation: Location of source molecule in the cell<br>\n TN = TargetName: Name of target molecule <br>\nTHA = TargetHumanAccession: target Swiss-Prot human accession number<br>\nTMA = TargetMouseAccession: target Swiss-Prot mouse accession number<br>\nTT = TargetType: Type of target molecule<br>\nTL =  TargetLocation: Location of target molecule in the cell<br>\nE = Effect: Effect of source on target. + (activating), _ (deactivating), or 0 (neutral)<br>\nTOI = TypeOfInteraction: Reaction type definition<br>\nPID = PubMedID: ID of article that identified this reaction");
         templateHelpScrollPane.setViewportView(templateHelpTextPanel);
+		
+		rulesHelpDialog.setTitle("Rules File Help");
+        rulesHelpDialog.setResizable(false);
+
+        rulesHelpTextPane.setContentType("text/html");
+        rulesHelpTextPane.setText("<html>The rules file allows the user to specify the logic that is used to parse and classify the reaction lines from the input file. A default <b><i>rules.txt</i></b> is included with the program release. However, if the user wishes to write his or her own program logic, the lines of the rules.txt file may modified, keeping this form: <br><br><code><b>IDENTIFIER</b>=<i>literal</i> [[and|or <b>IDENTIFIER2</b>=<i>literal2</i>]…] then <b>REACTIONTYPE</b></code><br><br> If, when the lines of the reaction input file are processed, specified conditions are met, i.e IDENTIFIER does in fact equal literal, etc., then REACTIONTYPE will be passed to the program as the selected reaction type. As an example, consider the following line: <code><br>toi=sumolation or toi=sumoylation then sumolation</code><br><br>The identifiers may also be grouped with parenthesis, used to prioritize the order of evaluation, as in the following example:<br><code> toi=phosphorylation and (st=kinase or st=receptor) then kinasePhosphorylation</code><br> In this example, the statements in parenthesis will be evaluated first. <br><br> may include the verb \"contains,\" as in the following example:<br><code>toi contains gap then gap</code><br> This means that the condition will be met if the TOI (type of interaction) in the reaction file contains the phrase \"gap\" as in \"123gap\" or \"4gap56\". <br><br>A blank literal may be specified by using a pair of double-quotation marks as in the following example: <br><code>toi=phosphorylation and st=\"\" then kinasePhosphorylation</code><br><br>The following are the accepted <b>IDENTIFIER</b>s: <code><br><b>sn</b> = SourceName: Name of source molecule. <br><b>sha</b> = SourceHumanAccession: Source Swiss-Prot human accession number. <br><b>sma</b> = SourceMouseAccession: Source Swiss-Prot mouse accession number<br><b>st</b> = SourceType: Type of source molecule<br><b>sl</b> = SourceLocation: Location of source molecule in the cell<br><b>tn</b> = TargetName: Name of target molecule<br><b>tha</b> = TargetHumanAccession: target Swiss-Prot human accession number<br><b>tma</b> = TargetMouseAccession: target Swiss-Prot mouse accession number<br><b>tt</b> = TargetType: Type of target molecule<br><b>tl</b> = TargetLocation: Location of target molecule in the cell<br><b>e</b> = Effect: Effect of source on target. + (activating), _ (deactivating), or 0 (neutral)<br><b>toi</b> = TypeOfInteraction: Reaction type definition<br><b>pid</b> = PubMedID: ID of article that identified this reaction</code><br><br>The following are <b>REACTIONTYPE</b>s which can currently be processed by Sig2BioPAX.<code><br><b>kinasePhosphorylation</b>: Kinase catalyzes addition of phosphate group to target protein <br><b>dephosphorylation</b>: Catalyst causes removal of phosphate group from target protein. <br><b>gef</b>: X-GDP, the GDP is removed and replaced with GTP <br><b>gap</b>: X-GTP, the GTP is removed and replaced with GDP. <br><b>deubiquitination</b>: Ubiquitin molecule is removed from target molecule <br><b>ubiquitination</b>: Ubiquitin molecule is added to target molecule <br><b>sumoylation</b>: Small Ubiquitin-related Modifier, is attached to target molecule <br><b>plcleavage</b>: PLC cleaves PIP2 into IP3 and DAG <br><b>cysprotease</b>: Deactivating cleavage on a cysteine residue of target protein <br><b>cleavage</b>: Deactivating cleavage <br><b>procleavage</b>: Activating cleavage. Mostly, cleavage of Pro-caspases into caspases <br><b>proteinprotein</b>: Undefined interaction between two proteins <br><b>indirectTranscription</b>: Protein indirectly activates or inhibits transcription of gene products.</code>");
+        rulesHelpScrollPane.setViewportView(rulesHelpTextPane);
 
         javax.swing.GroupLayout templateHelpDialogLayout = new javax.swing.GroupLayout(templateHelpDialog.getContentPane());
         templateHelpDialog.getContentPane().setLayout(templateHelpDialogLayout);
@@ -106,6 +124,41 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
             templateHelpDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(templateHelpScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 313, Short.MAX_VALUE)
         );
+
+        javax.swing.GroupLayout rulesHelpDialogLayout = new javax.swing.GroupLayout(rulesHelpDialog.getContentPane());
+        rulesHelpDialog.getContentPane().setLayout(rulesHelpDialogLayout);
+        rulesHelpDialogLayout.setHorizontalGroup(
+            rulesHelpDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(rulesHelpScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 486, Short.MAX_VALUE)
+        );
+        rulesHelpDialogLayout.setVerticalGroup(
+            rulesHelpDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(rulesHelpScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 313, Short.MAX_VALUE)
+        );
+
+        javax.swing.GroupLayout jDialog2Layout = new javax.swing.GroupLayout(jDialog2.getContentPane());
+        jDialog2.getContentPane().setLayout(jDialog2Layout);
+        jDialog2Layout.setHorizontalGroup(
+            jDialog2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 400, Short.MAX_VALUE)
+        );
+        jDialog2Layout.setVerticalGroup(
+            jDialog2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 300, Short.MAX_VALUE)
+        );
+
+        javax.swing.GroupLayout jDialog3Layout = new javax.swing.GroupLayout(jDialog3.getContentPane());
+        jDialog3.getContentPane().setLayout(jDialog3Layout);
+        jDialog3Layout.setHorizontalGroup(
+            jDialog3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 400, Short.MAX_VALUE)
+        );
+        jDialog3Layout.setVerticalGroup(
+            jDialog3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 300, Short.MAX_VALUE)
+        );
+
+        rulesHelpScrollPane.setViewportView(rulesHelpTextPane);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Sig2BioPAX");
@@ -165,6 +218,21 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
         jProgressBar1.setBorderPainted(false);
         jProgressBar1.setString("Done!                                          ");
 
+        openRulesButton.setText("Open Rules File...");
+        openRulesButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                openRulesButtonActionPerformed(evt);
+            }
+        });
+
+        rulesHelpButton.setText("?");
+        rulesHelpButton.setMinimumSize(null);
+        rulesHelpButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rulesHelpButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -173,23 +241,10 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(saveFileButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(overwriteCheckBox)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(42, 42, 42)
-                                        .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 171, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 104, Short.MAX_VALUE)
-                                .addComponent(logoSBCNY, javax.swing.GroupLayout.PREFERRED_SIZE, 168, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(logoMSSM, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(outputFileTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 564, Short.MAX_VALUE)))
+                        .addGap(10, 10, 10)
+                        .addComponent(rulesHelpButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(openFileButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(templateLabel)
@@ -197,45 +252,64 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
                                 .addComponent(templateTypeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(templateHelpButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(inputFileTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 564, Short.MAX_VALUE)))
-                    .addComponent(runProgramButton, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(openFileButton, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(inputFileTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 583, Short.MAX_VALUE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(saveFileButton, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(outputFileTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 583, Short.MAX_VALUE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(overwriteCheckBox)
+                                    .addComponent(runProgramButton, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(18, 18, 18)
+                                .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 171, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 158, Short.MAX_VALUE)
+                                .addComponent(logoSBCNY, javax.swing.GroupLayout.PREFERRED_SIZE, 168, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(logoMSSM, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(openRulesButton, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(rulesFileTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 583, Short.MAX_VALUE)))
+                        .addGap(21, 21, 21))))
         );
-
-        layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {openFileButton, saveFileButton});
-
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(openFileButton)
                     .addComponent(inputFileTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(templateLabel)
-                        .addComponent(templateTypeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(templateHelpButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(42, 42, 42)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(saveFileButton)
-                            .addComponent(outputFileTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(templateLabel)
+                    .addComponent(templateTypeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(templateHelpButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(rulesFileTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(openRulesButton))
+                .addGap(4, 4, 4)
+                .addComponent(rulesHelpButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(outputFileTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(saveFileButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(logoMSSM)
+                    .addComponent(logoSBCNY, javax.swing.GroupLayout.DEFAULT_SIZE, 101, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(logoSBCNY, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                        .addContainerGap())
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(logoMSSM, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                        .addContainerGap())
-                    .addGroup(layout.createSequentialGroup()
+                        .addGap(4, 4, 4)
                         .addComponent(overwriteCheckBox)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(runProgramButton)
-                            .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 51, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(runProgramButton))))
+                .addContainerGap())
         );
 
         pack();
@@ -255,6 +329,7 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
         int argNum = 0;
         if (inputFileTextField.getText().isEmpty()==false) argNum++;
         if (outputFileTextField.getText().isEmpty()==false) argNum++;
+        if (rulesFileTextField.getText().isEmpty()==false) argNum++;
         if (overwrite) argNum++;
         if (templateTypeComboBox.getSelectedItem().toString().isEmpty()==false)
             argNum++;
@@ -271,6 +346,21 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
         if (inFile.exists()==true && inputFileTextField.getText()=="")
         {
              String message = "Default file input.txt found, will use that.";
+              JOptionPane.showMessageDialog(new JFrame(), message, "Dialog",
+              JOptionPane.ERROR_MESSAGE);
+              // should fix this, should not have multiple function exits
+        }
+        rulesFile = new File(rulesFileTextField.getText());
+        if (rulesFile.exists()==false)
+        {
+             String message = "Rules file not found.";
+              JOptionPane.showMessageDialog(new JFrame(), message, "Dialog",
+              JOptionPane.ERROR_MESSAGE);
+              return;  // should fix this, should not have multiple function exits
+        }
+        if (rulesFile.exists()==true && rulesFileTextField.getText()=="")
+        {
+             String message = "Default rules file rules.txt found, will use that.";
               JOptionPane.showMessageDialog(new JFrame(), message, "Dialog",
               JOptionPane.ERROR_MESSAGE);
               // should fix this, should not have multiple function exits
@@ -294,6 +384,11 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
         if (outputFileTextField.getText().isEmpty()==false)
         {
             args[argAccess]= "-out:" +outputFileTextField.getText();
+            argAccess++;
+        }
+        if (rulesFileTextField.getText().isEmpty()==false)
+        {
+            args[argAccess]= "-r:" +rulesFileTextField.getText();
             argAccess++;
         }
         if (overwrite)
@@ -342,6 +437,22 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
 
     }//GEN-LAST:event_templateHelpButtonActionPerformed
 
+    private void rulesHelpButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rulesHelpButtonActionPerformed
+    rulesHelpDialog.setSize(780, 530);
+    rulesHelpDialog.setVisible(true);
+    }//GEN-LAST:event_rulesHelpButtonActionPerformed
+
+    private void openRulesButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openRulesButtonActionPerformed
+        final JFileChooser fc = new JFileChooser();
+        int returnVal = fc.showOpenDialog(this);
+
+        if (returnVal == JFileChooser.APPROVE_OPTION)
+        {
+            rulesFile = fc.getSelectedFile();
+        }
+        rulesFileTextField.setText(outFile.toString());
+    }//GEN-LAST:event_openRulesButtonActionPerformed
+
 
     /**
     * @param args the command line arguments
@@ -369,12 +480,20 @@ public class Sig2BioPAXGUI extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField inputFileTextField;
+    private javax.swing.JDialog jDialog2;
+    private javax.swing.JDialog jDialog3;
     private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JLabel logoMSSM;
     private javax.swing.JLabel logoSBCNY;
     private javax.swing.JButton openFileButton;
+    private javax.swing.JButton openRulesButton;
     private javax.swing.JTextField outputFileTextField;
     private javax.swing.JCheckBox overwriteCheckBox;
+    private javax.swing.JTextField rulesFileTextField;
+    private javax.swing.JButton rulesHelpButton;
+    private javax.swing.JDialog rulesHelpDialog;
+    private javax.swing.JScrollPane rulesHelpScrollPane;
+    private javax.swing.JTextPane rulesHelpTextPane;
     private javax.swing.JButton runProgramButton;
     private javax.swing.JButton saveFileButton;
     private javax.swing.JButton templateHelpButton;
