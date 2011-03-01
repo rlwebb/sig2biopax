@@ -1,4 +1,4 @@
-//    Sig2BioPAXv3, converts SIG flat files to BioPAX level 3
+//    Sig2BioPAXv4, converts SIG flat files to BioPAX level 3
 //    Copyright (C) 2010 Ryan Logan Webb
 //    This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 //    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -35,6 +35,7 @@ public class Sig2BioPaxv4 {
     	String inFile = "input.txt";
       	String outFile = "output.owl";
       	String inFormat = "sig";
+        String rulesFile = "rules.txt";
     	boolean overwrite = false;
         for (int i = 0; i < args.length; i++)
         {
@@ -42,6 +43,7 @@ public class Sig2BioPaxv4 {
             else if (args[i].startsWith("-out:")) outFile = args[i].substring(5);
             else if (args[i].equalsIgnoreCase("-o")) overwrite = true;
             else if (args[i].startsWith("-t:")) inFormat = args[i].substring(3);
+            else if (args[i].startsWith("-r:")) rulesFile = args[i].substring(3);
         }
 
 
@@ -100,189 +102,108 @@ public class Sig2BioPaxv4 {
     	    	Line.SetupInput(inFormat, inFile);
     	
     	Log logger = new Log();
+
+        File decisionTemplate = new File(rulesFile);
+
        try {
     	while (true)
         {
     	      Line.ReadLine();
 
-           if (Line.TypeofInteraction.equalsIgnoreCase("phosphorylation")
-        		   && (Line.SourceType.equalsIgnoreCase("") || Line.SourceType.equalsIgnoreCase("")))
+            String decision = javacc.UQLParser.checkLine(decisionTemplate);
+    //        System.out.print(decision);
+
+           if (decision.equalsIgnoreCase("kinasePhosphorylation"))
            {
         	   Line.Catalysis.isKinasePhosphorylation = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
                    addNewCatalysis(biopaxmodel);
            }
-           if (Line.TypeofInteraction.equalsIgnoreCase("phosphorylation")
-        		   && (Line.SourceType.equalsIgnoreCase("kinase") || Line.SourceType.equalsIgnoreCase("receptor")))
-           {
-        	   Line.Catalysis.isKinasePhosphorylation = true;
-        	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-                   addNewCatalysis(biopaxmodel);
-           }
-           else if (Line.TypeofInteraction.equalsIgnoreCase("dephosphorylation"))
+           else if (decision.equalsIgnoreCase("dephosphorylation"))
     	   {
     		   Line.Catalysis.isDePhosphorylation = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
         	   addNewCatalysis(biopaxmodel);
     	   } 
-           else if (Line.TypeofInteraction.equalsIgnoreCase("ubiquitination"))
+           else if (decision.equalsIgnoreCase("ubiquitination"))
            {
         	   Line.Catalysis.isUbiquitination = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-               addNewCatalysis(biopaxmodel);
+                   addNewCatalysis(biopaxmodel);
            } 
-           else if (Line.TypeofInteraction.equalsIgnoreCase("deubiquitination"))
+           else if (decision.equalsIgnoreCase("deubiquitination"))
            {
         	   Line.Catalysis.isDeUbiquitination = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-               addNewCatalysis(biopaxmodel);
+                   addNewCatalysis(biopaxmodel);
            }
-           else if (Line.TypeofInteraction.equalsIgnoreCase("gef"))
+           else if (decision.equalsIgnoreCase("gef"))
            {
         	   Line.Catalysis.isGEF = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
         	   addNewCatalysis(biopaxmodel);
            } 
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("binding"))
+    	   else if (decision.equalsIgnoreCase("binding"))
     	   {
     		   Line.ComplexAssembly.isBinding = true;
         	   if (Line.PubMedID.equals("")){Line.ComplexAssembly.hasNoPublicationXref = true;}
     		   addNewComplexAssembly(biopaxmodel);
     	   } 
-    	   else if ((Line.TypeofInteraction.equalsIgnoreCase("cleavage") || Line.TypeofInteraction.equalsIgnoreCase("synthesis"))
-    			   && Line.SourceType.equalsIgnoreCase("phospholipase") && Line.SourceName.toLowerCase().contains("plc"))
+    	   else if (decision.equalsIgnoreCase("plc"))
     	   {
     		   Line.Catalysis.isPLC = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
     		   addNewCatalysis(biopaxmodel);
     	   } 
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("gap"))
+    	   else if (decision.equalsIgnoreCase("gap"))
     	   {
     		   Line.Catalysis.isGAP = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
     		   addNewCatalysis(biopaxmodel);
     	   } 
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("cleavage") && Line.SourceType.equalsIgnoreCase("protease") && (Line.Effect.equals("_") || Line.Effect.equals("-")))
+    	   else if (decision.equalsIgnoreCase("protease"))
     	   {
     		   Line.Catalysis.isProtease = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
     		   addNewCatalysis(biopaxmodel);
     	   } 
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("cleavage") && Line.SourceType.equalsIgnoreCase("protease") && Line.Effect.equals("+"))
+    	   else if (decision.equalsIgnoreCase("procleavage"))
     	   {
     		   Line.Catalysis.isProCleavage = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
     		   addNewCatalysis(biopaxmodel);
     	   } 
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("sumolation") || Line.TypeofInteraction.equalsIgnoreCase("sumoylation"))
+    	   else if (decision.equals("sumolation"))
     	   {
     		   Line.Catalysis.isSumolation = true;
         	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
     		   addNewCatalysis(biopaxmodel);
     	   } 
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("tfpromoterbinding"))
-    	   {
-    		   Line.ComplexAssembly.isBinding = true;
-        	   if (Line.PubMedID.equals("")){Line.ComplexAssembly.hasNoPublicationXref = true;}
-    		   addNewComplexAssembly(biopaxmodel);
-    	   }
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("indirecttranscription"))
+    	   else if (decision.equals("indirectregulation"))
     	   {
     		   Line.TemplateReactionRegulation.isIndirectRegulation = true;
         	   if (Line.PubMedID.equals("")){Line.TemplateReactionRegulation.hasNoPublicationXref = true;}
     		   addNewTemplateReactionRegulation(biopaxmodel);
     	   }
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("transcription"))
+    	   else if (decision.equals("directtranscription"))
     	   {
     		   Line.TemplateReactionRegulation.isDirectTranscription = true;
         	   if (Line.PubMedID.equals("")){Line.TemplateReactionRegulation.hasNoPublicationXref = true;}
     		   addNewTemplateReactionRegulation(biopaxmodel);
     	   }
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("proteinprotein"))
-    	   {
-        	   if (Line.PubMedID.equals("")){Line.MolecularInteraction.hasNoPublicationXref = true;}
-    		   addNewMolecularInteraction(biopaxmodel);
-    	   }
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("NA"))
+    	   else if (decision.equals("molecularInteraction"))
     	   {
         	   if (Line.PubMedID.equals("")){Line.MolecularInteraction.hasNoPublicationXref = true;}
     		   addNewMolecularInteraction(biopaxmodel);
     	   }
 
-    	   else if (Line.TypeofInteraction.equalsIgnoreCase("activation") || Line.TypeofInteraction.equalsIgnoreCase("inhibition"))
-    	   {
-    		   if (Line.SourceType.equalsIgnoreCase("TyrKinase") || Line.SourceType.equalsIgnoreCase("SerThrKinase") || Line.SourceType.equalsIgnoreCase("PtdInsKinase") || Line.SourceType.equalsIgnoreCase("Receptor") || Line.SourceType.equalsIgnoreCase("DualKinase"))
-    		   {
-    			   Line.Catalysis.isKinasePhosphorylation = true;
-            	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-    			   addNewCatalysis(biopaxmodel);
-    		   }
-    		    else if (Line.SourceType.equalsIgnoreCase("adaptor") || Line.SourceType.equalsIgnoreCase("cytoskeletal") || Line.SourceType.equalsIgnoreCase("metalloproteinase") || Line.SourceType.equalsIgnoreCase("adhesion") || Line.SourceType.equalsIgnoreCase("messenger") || Line.SourceType.equalsIgnoreCase("actinbinding") || Line.SourceType.equalsIgnoreCase("receptor"))
-    		    {
-    		      Line.ComplexAssembly.isBinding = true;
-           	   if (Line.PubMedID.equals("")){Line.ComplexAssembly.hasNoPublicationXref = true;}
-    		      addNewComplexAssembly(biopaxmodel);
-    		    }
-    		   else if (Line.SourceType.toLowerCase().contains("gef") && Line.TargetType.equalsIgnoreCase("gtpase"))
-    		   {
-    			   Line.Catalysis.isGEF = true;
-            	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-    			   addNewCatalysis(biopaxmodel);
-    		   }
-    		   else if (Line.SourceType.toLowerCase().contains("gef") && !Line.TargetType.equalsIgnoreCase("gtpase"))
-    		   {
-    			   Line.ComplexAssembly.isBinding = true;
-            	   if (Line.PubMedID.equals("")){Line.ComplexAssembly.hasNoPublicationXref = true;}
-    			   addNewComplexAssembly(biopaxmodel);
-    		   }
-    		   else if (Line.SourceType.equalsIgnoreCase("e3ligase") && (Line.Effect.equals("_") || Line.Effect.equals("-")))
-    		   {
-    			   Line.Catalysis.isUbiquitination = true;
-            	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-    			   addNewCatalysis(biopaxmodel);
-    		   }
-    		   else if (Line.SourceName.equalsIgnoreCase("pip2") || Line.SourceName.equalsIgnoreCase("pip3"))
-    		   {
-    			   Line.ComplexAssembly.isBinding = true;
-            	   if (Line.PubMedID.equals("")){Line.ComplexAssembly.hasNoPublicationXref = true;}
-    			   addNewComplexAssembly(biopaxmodel);
-    		   }
-    		   else if (Line.SourceType.equalsIgnoreCase("gtpase"))
-    		   {
-    			   Line.ComplexAssembly.isBinding = true;
-            	   if (Line.PubMedID.equals("")){Line.ComplexAssembly.hasNoPublicationXref = true;}
-    			   addNewComplexAssembly(biopaxmodel);
-    		   }
-    		   else if (Line.SourceType.equalsIgnoreCase("phospholipase"))
-    		   {
-    			   Line.ComplexAssembly.isBinding = true;
-            	   if (Line.PubMedID.equals("")){Line.ComplexAssembly.hasNoPublicationXref = true;}
-    			   addNewComplexAssembly(biopaxmodel);
-    		   }
-    		   else if (Line.SourceName.toLowerCase().contains("GAP") && Line.TargetType.equalsIgnoreCase("gtpase"))
-    		   {
-    			   Line.Catalysis.isGAP = true;
-            	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-    			   addNewCatalysis(biopaxmodel);
-    		   }
-			    else if (Line.SourceType.equalsIgnoreCase("tyrphosphatase") || Line.SourceType.equalsIgnoreCase("serthrphosphatase") || Line.SourceType.equalsIgnoreCase("ptdinsphosphatase"))
-			    {
-			      Line.Catalysis.isDePhosphorylation = true;
-	        	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-			      addNewCatalysis(biopaxmodel);
-			      
-			    }
-			    else if (Line.SourceType.equalsIgnoreCase("cysprotease"))
-			    {
-			    	Line.Catalysis.isCysProtease = true;
-		        	   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
-			    	addNewCatalysis(biopaxmodel);
-			    }
-	    	    else
-		    	   {
-		    		   logger.LogLine();
-		    	   }
-    	   }
+            else if (decision.equalsIgnoreCase("cysprotease"))
+            {
+                Line.Catalysis.isCysProtease = true;
+                   if (Line.PubMedID.equals("")){Line.Catalysis.hasNoPublicationXref = true;}
+                addNewCatalysis(biopaxmodel);
+            }
+
     	   else
     	   {
     		   logger.LogLine();
@@ -298,8 +219,6 @@ public class Sig2BioPaxv4 {
 		catch (NullPointerException e)
 		{
 		}
- 
-                
  
     			RDFWriter writer = biopaxmodel.getWriter("RDF/XML-ABBREV");
     			writer.setProperty("xmlbase",namespaceFileString);
