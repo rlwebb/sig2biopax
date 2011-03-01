@@ -1,0 +1,422 @@
+options {
+STATIC = false ;
+}
+PARSER_BEGIN(UQLParser)
+
+package javacc;
+
+import java.io.StringReader;
+import java.io.Reader;
+import java.io.File;
+import java.lang.String;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+public class UQLParser {
+    public static String SourceName;
+    public static String SourceHumanAccession;
+    public static String SourceMouseAccession;
+    public static String SourceType;
+    public static String SourceLocation;
+    public static String TargetName;
+    public static String TargetHumanAccession;
+    public static String TargetMouseAccession;
+    public static String TargetType;
+    public static String TargetLocation;
+    public static String Effect;
+    public static String TypeofInteraction;
+    public static String PubMedID;
+
+        public static Boolean exprIsTrue = false;
+        public static String Decision = "";
+
+        public static String text;
+        public static File file;
+
+   public UQLParser(String s)
+    {
+        this((Reader)(new StringReader(s)));
+        //	file = f;
+    }
+        public static void main(String args[])
+    {
+        programCode.Line.FakeLine();
+        File f1 = new File("input.txt");
+        checkLine(f1);
+        System.out.print(Decision);
+    }
+
+    private static void loadLine ()
+        {
+                SourceName = programCode.Line.SourceName;
+                SourceHumanAccession = programCode.Line.SourceHumanAccession;
+                SourceMouseAccession = programCode.Line.SourceMouseAccession;
+                SourceType = programCode.Line.SourceType;
+                SourceLocation = programCode.Line.SourceLocation;
+                TargetName = programCode.Line.TargetName;
+                TargetHumanAccession = programCode.Line.TargetHumanAccession;
+                TargetMouseAccession = programCode.Line.TargetMouseAccession;
+                TargetType = programCode.Line.TargetType;
+                TargetLocation = programCode.Line.TargetLocation;
+                Effect = programCode.Line.Effect;
+                TypeofInteraction = programCode.Line.TypeofInteraction;
+                PubMedID = programCode.Line.PubMedID;
+        }
+    public static String checkLine(File f)
+    {
+        try
+        {
+				loadLine();
+				FileReader file = new FileReader(f);
+				BufferedReader fileInput = new BufferedReader(file);
+
+
+		 String query = "";
+		 String finalDecision = "";
+		 UQLParser parser = new UQLParser(query);
+		 while ((query = fileInput.readLine())!= null)
+				 {
+						parser = new UQLParser(query);
+						parser.parse();
+						if (parser.Decision!="") finalDecision=parser.Decision;
+						
+				}
+		return finalDecision;
+		}
+        catch(Exception e)
+        {
+                e.printStackTrace();
+        }
+                return "";
+    }
+}
+PARSER_END(UQLParser) 
+
+/**  And now, the actual parsing specifications...... */
+
+/** Skip these characters, they are considered "white space" **/
+SKIP :                              
+{
+    " "
+    | "\t"
+    | "\r"
+    | "\n"
+
+}
+
+
+TOKEN: /*RESERVED TOKENS FOR UQL */
+{
+      <AND: "and">
+   |  <OR:  "or">
+   |  <SN: "sn" | "SN">
+   |  <SHA: "sha" | "SHA">
+   |  <ST: "st" | "ST">
+   |  <SL: "sl" | "SL">
+   |  <TN: "tn" | "TN>
+   |  <THA: "tha" | "THA">
+   |  <TMA: "tma" | "TMA">
+   |  <TT: "tt" | "TT">
+   |  <TL: "tl" | "TL">
+   |  <E: "e" | "E">
+   |  <TOI: "toi" | "TOI">
+   |  <PID: "pid" | "PID">
+   |  <LPAREN: "(">
+   |  <RPAREN: ")">
+   |  <EQUALS: "=">
+   |  <NOTEQUAL: "!=">
+   |  <CONTAINS: "contains" | "CONTAINS">
+   |  <THEN: "then" | "THEN">
+   |  <EOL : "\n" | "\r" | "\r\n">
+}
+
+TOKEN : /* the keywords and comparators - QUOTEDVALUE accounts for escaped quotes as well */
+{
+        < STRING : (["A"-"Z","a"-"z","0"-"9","+","_","-"])+ >
+|       < QUOTED_STRING: "\"" (~["\""])+ "\"" >
+|       < EMPTY_STRING: "\"" "\"" >
+}
+
+
+/** 
+ *  Top level
+ */
+void parse() :
+{
+	Token tlocalStr;
+	Boolean expressionResult = false;
+}
+{
+    expressionResult = expression() 
+    ( <THEN> )
+    ( tlocalStr=<STRING> | tlocalStr=<QUOTED_STRING> )	(<EOF>)
+																{if (expressionResult==true)
+																	{
+																		Decision=tlocalStr.image;
+																	}
+																else Decision="";
+																}
+	
+	// a query followed by optional sort
+}
+
+/**
+ * An expression is defined to be a queryTerm followed by zero or more
+ * query terms joined by either an AND or an OR.   If two query terms are joined with 
+ * AND then both conditions must be met.  If two query terms are joined with an OR, then
+ * one of the two conditions must be met.  
+ */
+Boolean expression() :
+{
+  Boolean pass=false;
+  Boolean pass2=false;
+  Boolean totalFail = false;
+  Boolean oneAndTrue = false;
+  Boolean oneOrTrue = false;
+  Boolean and=false;
+  Boolean or=false;
+  Boolean hasSecond = false;
+  Boolean isLastExprSetTrue = false;
+}
+{            pass = queryTerm()    
+            (
+              ( <AND> {and=true;} | <OR> {or=true;}) 
+              pass2 = queryTerm() {
+										hasSecond = true;
+										if (and==true)
+										{
+											and = false;
+											
+											if (pass==true && pass2==true)
+												{
+													isLastExprSetTrue=true;
+												}
+											else isLastExprSetTrue = false;											
+										}
+										else if (or==true)
+										{
+											or = false; //reset
+											if (pass==true || pass2==true)
+											{
+												isLastExprSetTrue = true;
+											}
+											else isLastExprSetTrue = false;
+										}
+										pass = isLastExprSetTrue;
+									}
+								)* 
+			{ 
+				if (hasSecond==false) return pass;
+				else return isLastExprSetTrue;
+
+				}
+}
+
+/**
+ * Query terms may consist of a parenthetically separated expression or
+ * may be a query criteria of the form queryName = something or queryName <> something.
+ *
+ */
+Boolean queryTerm() :
+{
+	
+	Boolean sn = false;
+	Boolean sha = false; 
+	Boolean st = false; 
+	Boolean sl = false; 
+	Boolean tn = false; 
+	Boolean tha = false; 
+	Boolean tt = false; 
+	Boolean tl = false; 
+	Boolean e = false; 
+	Boolean toi = false; 
+	Boolean pid = false; 
+	Boolean equals = false; 
+	Boolean notequal = false;
+	Boolean contains = false;
+	Token tcompareStr;
+	String scompareStr = "";
+	String str, quot_str;
+	Boolean pass=false;
+}
+{
+        ( <SN> {sn = true;} | <SHA> {sha = true;}| <ST> {st = true;}| <SL> {sl = true;} | <TN> {tn = true;}| <THA> {tha = true;} | <TT> {tt = true;} | <TL> {tl = true;} | <E> {e = true;} | <TOI> {toi = true;} | <PID> {pid = true;} )
+        ( <EQUALS> {equals=true;} | <NOTEQUAL> {notequal=true;} | <CONTAINS> {contains=true;} ) 
+        ( tcompareStr=<STRING> {scompareStr=tcompareStr.image;} | tcompareStr=<QUOTED_STRING> {scompareStr= tcompareStr.image.substring(1,tcompareStr.image.length() - 1);} | tcompareStr=<EMPTY_STRING> {scompareStr="";})  {
+
+
+								if (sn == true)
+									{
+										if (equals==true)
+										{
+											if (SourceName.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(SourceName.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (SourceName.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}
+									}
+								if (sha == true)
+									{
+										if (equals==true)
+										{
+											if (SourceHumanAccession.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(SourceHumanAccession.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (SourceHumanAccession.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (st == true)
+									{
+										if (equals==true)
+										{
+											if (SourceType.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(SourceType.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (SourceType.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (sl == true)
+									{
+										if (equals==true)
+										{
+											if (SourceLocation.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(SourceLocation.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (SourceLocation.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (tn == true)
+									{
+										if (equals==true)
+										{
+											if (TargetName.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(TargetName.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (TargetName.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (tha == true)
+									{
+										if (equals==true)
+										{
+											if (TargetHumanAccession.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(TargetHumanAccession.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (TargetHumanAccession.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (tt == true)
+									{
+										if (equals==true)
+										{
+											if (TargetType.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(TargetType.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (TargetType.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (tl == true)
+									{
+										if (equals==true)
+										{
+											if (TargetLocation.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(TargetLocation.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (TargetLocation.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (e == true)
+									{
+										if (equals==true)
+										{
+											if (Effect.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(Effect.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (Effect.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (toi == true)
+									{
+										if (equals==true)
+										{
+											if (TypeofInteraction.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(TypeofInteraction.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (TypeofInteraction.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								if (pid == true)
+									{
+										if (equals==true)
+										{
+											if (PubMedID.toLowerCase().equals(scompareStr.toLowerCase())) {pass=true;}
+										}
+										else if (notequal==true)
+										{
+											if (!(PubMedID.toLowerCase().equals(scompareStr.toLowerCase()))) {pass=true;}
+										}
+										else if (contains==true)
+										{
+											if (PubMedID.toLowerCase().contains(scompareStr.toLowerCase())) {pass=true;}
+										}										
+									}
+								return pass;
+							}
+        
+		 
+		
+        | ( <LPAREN> pass=expression() <RPAREN> ) {return pass;}
+}
+
+
+
